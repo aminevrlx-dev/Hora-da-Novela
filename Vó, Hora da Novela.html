@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Vó, Hora da Novela</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+:root{--bg:#f4f7fb;--card:#fff;--ink:#14213a;--mut:#46566e;--pri:#1d5c7a;--onpri:#fff;--acc:#9a3a08;--line:#bccade;--sel:#d7e9f3;--bad:#b3261e;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1722;--card:#192433;--ink:#f1f5fa;--mut:#b4c2d6;--pri:#6fc0e4;--onpri:#06202e;--acc:#ffb98a;--line:#3a4e68;--sel:#1f3a4d;--bad:#ff8a80}}
+:root[data-theme="dark"]{--bg:#0f1722;--card:#192433;--ink:#f1f5fa;--mut:#b4c2d6;--pri:#6fc0e4;--onpri:#06202e;--acc:#ffb98a;--line:#3a4e68;--sel:#1f3a4d;--bad:#ff8a80}
+*{box-sizing:inherit}[hidden]{display:none!important}
+html{scroll-padding-top:env(safe-area-inset-top,0px);font-size:20px}
+body{margin:0;background:var(--bg);color:var(--ink);font:1rem/1.45 "Atkinson Hyperlegible",system-ui,sans-serif}
+main{max-width:720px;margin:0 auto;padding:.5rem 1rem 8rem}
+.brand{font-weight:700;color:var(--pri);padding:.6rem 0}
+h1{font-size:1.6rem;margin:.2rem 0 .8rem;line-height:1.2}h2{font-size:1.3rem;margin:1.3rem 0 .5rem}h3{font-size:1.15rem;margin:.2rem 0}
+button,select,input,textarea{font:inherit;color:inherit}
+button{min-height:56px;padding:.5rem 1.1rem;border-radius:14px;border:2px solid var(--pri);background:var(--card);color:var(--pri);font-weight:700;cursor:pointer}
+button.p{background:var(--pri);color:var(--onpri)}button.d{border-color:var(--bad);color:var(--bad)}
+:focus-visible{outline:4px solid var(--acc);outline-offset:2px}
+input,select,textarea{width:100%;min-height:52px;padding:.5rem .7rem;border:2px solid var(--line);border-radius:12px;background:var(--card)}
+input[type=checkbox]{width:28px;min-height:28px;height:28px;flex:none}input[type=range]{padding:0}
+label{display:block;font-weight:700;margin:.8rem 0 .25rem}
+.chip{display:flex;align-items:center;gap:.5rem;margin:.4rem .4rem .4rem 0;font-weight:400;min-height:52px;border:2px solid var(--line);border-radius:12px;padding:0 .7rem;background:var(--card)}
+.card{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:1rem;margin:.7rem 0}
+.big{border-color:var(--pri)}
+.time{font-size:2.1rem;font-weight:700;color:var(--acc);line-height:1.1}.time small{font-size:.85rem;color:var(--mut);font-weight:400}
+.mut{color:var(--mut)}.err{color:var(--bad);font-weight:700}
+.row{display:flex;flex-wrap:wrap;gap:.6rem;margin:.7rem 0 0}.row>button{flex:1 1 auto}
+.tag{font-size:.7rem;border:2px solid var(--acc);color:var(--acc);border-radius:8px;padding:0 .35rem;white-space:nowrap}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:2px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{flex:1;border:0;border-radius:0;min-height:64px;font-size:.8rem;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:.2rem;color:var(--mut)}
+nav button[aria-current=page]{color:var(--pri);background:var(--sel)}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.grid .h{text-align:center;font-weight:700;font-size:.8rem;color:var(--mut)}
+.day{min-height:54px;padding:2px;border-radius:10px;border:2px solid var(--line);font-size:1.05rem;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1;color:var(--ink)}
+.day.t{border-color:var(--acc);box-shadow:inset 0 0 0 2px var(--acc)}.day.s{background:var(--pri);color:var(--onpri)}.day i{font-style:normal;font-size:.7rem}
+dialog{border:2px solid var(--pri);border-radius:18px;background:var(--bg);color:var(--ink);width:min(560px,94vw);max-height:92vh;padding:1rem}
+dialog::backdrop{background:rgba(0,0,0,.55)}
+#toast{position:fixed;left:1rem;right:1rem;bottom:6rem;max-width:680px;margin:auto;background:var(--ink);color:var(--bg);padding:.8rem 1rem;border-radius:12px;z-index:99}
+</style></head><body>
+<main><div class="brand">📺 Vó, Hora da Novela</div><div id="v"></div></main>
+<nav id="nav" aria-label="Menu principal"></nav>
+<dialog id="dlg"></dialog><div id="toast" role="status" hidden></div>
+<script>
+const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0'),uid=()=>Math.random().toString(36).slice(2,10);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const pd=s=>{const[a,b,c]=s.split('-');return new Date(+a,+b-1,+c)},dw=s=>(pd(s).getDay()+6)%7;
+const tm=t=>{const[h,m]=t.split(':');return +h*60+ +m};
+const dur=(a,b)=>{const m=tm(b)-tm(a),h=Math.floor(m/60);return((h?h+' h ':'')+(m%60?pad(m%60)+' min':''))||'0 min'};
+const DN=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'],cap=s=>s[0].toUpperCase()+s.slice(1);
+const fdate=(s,o)=>pd(s).toLocaleDateString('pt-BR',o);
+let S={ch:[],pr:[],set:{on:false,lead:10,vol:1,theme:'auto',wake:false},upd:null,fired:{}},tab='home',cal={},F={q:'',ch:''};
+const D=$('#dlg');
+function toast(m){const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,4500)}
+function load(){try{const r=JSON.parse(localStorage.getItem('vohn1')||'null');if(r)S={...S,...r,set:{...S.set,...r.set}}}catch(e){}
+ const t=ymd(new Date());S.fired=Object.fromEntries(Object.entries(S.fired||{}).filter(([k])=>k.startsWith(t)))}
+function save(){try{localStorage.setItem('vohn1',JSON.stringify(S))}catch(e){toast('Não foi possível salvar neste navegador. Use o backup em Ajustes.')}}
+function theme(){S.set.theme==='auto'?document.documentElement.removeAttribute('data-theme'):document.documentElement.dataset.theme=S.set.theme}
+/* ===== Provedor de programação (separado do resto; trocar aqui no futuro) ===== */
+const Provider={id:'nenhum',available:false,async fetch(){throw new Error('NO_SOURCE')}};
+const updTxt=()=>S.upd?'Última atualização automática: '+new Date(S.upd).toLocaleString('pt-BR'):'Atualização automática: ainda não disponível. Os horários são os que você cadastrou.';
+async function upd(){toast('Consultando a fonte…');try{await Provider.fetch();S.upd=Date.now();save();render()}catch(e){toast(e.message==='NO_SOURCE'?'A atualização automática ainda não está disponível: nenhuma fonte de programação foi conectada.':'Erro de conexão. Toque em “Tentar atualizar agora” de novo.')}}
+/* ===== Dados ===== */
+const chOf=id=>S.ch.find(c=>c.id===id);
+const hit=(p,d)=>p.date?p.date===d:!!(p.rep&&d>=p.rep.from&&d<=p.rep.to&&p.rep.days.includes(dw(d))&&!(p.ex||[]).includes(d));
+const occ=d=>S.pr.filter(p=>hit(p,d)&&chOf(p.ch)?.active).map(p=>({...p,ds:d})).sort((a,b)=>tm(a.start)-tm(b.start));
+const repTxt=p=>p.rep?`Toda semana: ${p.rep.days.map(i=>DN[i]).join(', ')} · de ${fdate(p.rep.from)} até ${fdate(p.rep.to)}`:'Só em '+fdate(p.date);
+const chl=o=>{const c=chOf(o.ch)||{};return esc(c.name)+' · canal '+esc(c.num)};
+function nextOcc(){const n=new Date(),sec=n.getHours()*3600+n.getMinutes()*60+n.getSeconds();
+ for(let i=0;i<=30;i++){const d=new Date(n.getFullYear(),n.getMonth(),n.getDate()+i),o=occ(ymd(d)).find(o=>i>0||tm(o.start)*60>sec);if(o)return{o,at:new Date(d.getFullYear(),d.getMonth(),d.getDate(),0,tm(o.start))}}return null}
+/* ===== Voz e lembretes ===== */
+function speak(t){if(!('speechSynthesis' in window)){toast('Este navegador não tem voz. Tente o Chrome.');return}
+ speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='pt-BR';u.volume=S.set.vol;
+ const v=speechSynthesis.getVoices().find(v=>/^pt[-_]BR/i.test(v.lang));if(v)u.voice=v;speechSynthesis.speak(u)}
+const msg=(o,m)=>`Vovó, sua novela ${o.title} começa em ${m} minuto${m>1?'s':''}, na ${(chOf(o.ch)||{}).name}, canal ${(chOf(o.ch)||{}).num}.`;
+function tick(){cdTick();if(!S.set.on)return;const n=new Date(),ds=ymd(n),sec=n.getHours()*3600+n.getMinutes()*60+n.getSeconds(),L=S.set.lead*60;
+ for(const o of occ(ds)){const diff=tm(o.start)*60-sec,k=ds+o.id+L;
+  if(diff>0&&diff<=L&&!S.fired[k]){S.fired[k]=1;const m=msg(o,Math.max(1,Math.round(diff/60)));speak(m);
+   try{if(Notification.permission==='granted')new Notification('Hora da novela',{body:m})}catch(e){}save()}}}
+let wl;async function wake(){try{if(S.set.wake&&navigator.wakeLock&&document.visibilityState==='visible')wl=await navigator.wakeLock.request('screen');else if(!S.set.wake&&wl){await wl.release();wl=null}}catch(e){}}
+document.addEventListener('visibilitychange',wake);
+function cdTick(){const e=$('#cd');if(!e)return;const nx=nextOcc();if(!nx)return;if(e.dataset.id!==nx.o.id+nx.o.ds)return render();
+ const s=Math.max(0,Math.round((nx.at-new Date())/1000)),d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);
+ e.textContent=d?`Começa em ${d} dia${d>1?'s':''} (${fdate(ymd(nx.at),{weekday:'long'})})`:`Faltam ${h?h+' h ':''}${m} min ${pad(s%60)} s`}
+/* ===== Telas ===== */
+function card(o,nx,res){const c=chOf(o.ch)||{},n=new Date(),mn=n.getHours()*60+n.getMinutes(),now=ymd(n)===o.ds&&tm(o.start)<=mn&&mn<tm(o.end);
+ return `<article class="card"><div class="time">${o.start}<small> até ${o.end} · ${dur(o.start,o.end)}</small></div>
+<h3>${esc(o.title)} ${o.demo?'<span class="tag">EXEMPLO FICTÍCIO</span>':''}${now?' <span class="tag">NO AR AGORA</span>':''}</h3>
+<p style="margin:.2rem 0">${esc(c.name)} · canal ${esc(c.num)}${c.region?' ('+esc(c.region)+')':''}</p>
+${res?`<p class="mut">${repTxt(o)}</p>`:''}${o.notes?`<p class="mut">${esc(o.notes)}</p>`:''}${nx?`<p class="mut">Próximo programa às ${nx}</p>`:''}
+<div class="row"><button data-act="edit" data-id="${o.id}">✏️ Editar</button><button data-act="dup" data-id="${o.id}">📄 Duplicar</button><button class="d" data-act="del" data-id="${o.id}" data-d="${o.ds}">🗑 Excluir</button></div></article>`}
+const list=l=>l.map((o,i)=>card(o,l[i+1]?.start)).join('');
+function home(){const t=ymd(new Date()),l=occ(t),nx=nextOcc();
+ const empty=S.pr.length?'<p class="mut">Nenhum programa para hoje.</p>':`<div class="card"><p>Ainda não há programas. Cadastre um canal e depois o programa, ou carregue exemplos fictícios para conhecer o site.</p><div class="row"><button data-act="tab" data-t="ch">📺 Cadastrar canal</button><button data-act="demo">🧪 Carregar exemplos</button></div></div>`;
+ return `<h1>${cap(fdate(t,{weekday:'long'}))}<br><span class="mut" style="font-size:1.1rem;font-weight:400">${fdate(t,{day:'numeric',month:'long',year:'numeric'})}</span></h1>
+<section class="card big"><h2 style="margin-top:0">Próxima novela</h2>${nx?`<div class="time">${nx.o.start}</div><h3>${esc(nx.o.title)}</h3><p style="margin:.2rem 0">${chl(nx.o)}</p><p id="cd" data-id="${nx.o.id+nx.o.ds}" style="font-size:1.3rem;font-weight:700;margin:.5rem 0 0"></p>`:'<p>Nenhum programa nos próximos dias.</p>'}</section>
+<div class="row"><button class="p" data-act="tab" data-t="cal">📅 Abrir calendário</button><button class="p" data-act="new">➕ Cadastrar programa</button><button data-act="test">🔊 Testar aviso por voz</button></div>
+<h2>Programas de hoje</h2>${l.length?list(l):empty}<p class="mut">${updTxt()}</p>`}
+function lst(){
+ if(F.q||F.ch){const q=F.q.toLowerCase(),r=S.pr.filter(p=>(!q||p.title.toLowerCase().includes(q))&&(!F.ch||p.ch===F.ch));
+  return `<h2>Resultados (${r.length})</h2>`+(r.map(p=>card({...p,ds:p.date||p.rep.from},'',1)).join('')||'<p class="mut">Nenhum programa encontrado.</p>')}
+ const l=occ(cal.sel);return `<h2>${cap(fdate(cal.sel,{weekday:'long',day:'numeric',month:'long'}))}</h2><button class="p" data-act="new" style="width:100%">➕ Cadastrar neste dia</button>`+(l.length?list(l):'<p class="mut">Nada cadastrado neste dia.</p>')}
+function calv(){const{y,m,sel}=cal,off=(new Date(y,m,1).getDay()+6)%7,nd=new Date(y,m+1,0).getDate(),t=ymd(new Date()),mn=new Date(y,m,1).toLocaleDateString('pt-BR',{month:'long'});
+ let c=DN.map(d=>`<div class="h">${d}</div>`).join('')+'<div></div>'.repeat(off);
+ for(let d=1;d<=nd;d++){const ds=y+'-'+pad(m+1)+'-'+pad(d),n=occ(ds).length;
+  c+=`<button class="day${ds===t?' t':''}${ds===sel?' s':''}" data-act="pick" data-d="${ds}" aria-label="${d} de ${mn}, ${n} programa${n===1?'':'s'}${ds===t?', hoje':''}">${d}${n?`<i>● ${n}</i>`:''}</button>`}
+ return `<h1 style="text-align:center">${cap(mn)} de ${y}</h1><div class="row" style="margin-bottom:.8rem"><button data-act="mo" data-n="-1">‹ Anterior</button><button data-act="mo" data-n="0">Hoje</button><button data-act="mo" data-n="1">Próximo ›</button></div>
+<div class="grid">${c}</div><p class="mut">● = dia com programas</p>
+<label for="q">Pesquisar pelo nome</label><input id="q" type="search" value="${esc(F.q)}" placeholder="Ex.: novela das seis">
+<label for="fc">Filtrar por emissora e canal</label><select id="fc"><option value="">Todas as emissoras</option>${S.ch.map(c=>`<option value="${c.id}" ${F.ch===c.id?'selected':''}>${esc(c.name)} — canal ${esc(c.num)}</option>`).join('')}</select>
+<div id="lst">${lst()}</div>`}
+function chv(){return `<h1>Canais</h1><p class="mut">A numeração muda de cidade para cidade: cadastre o número do canal que aparece na SUA TV.</p><button class="p" data-act="newch" style="width:100%">➕ Cadastrar canal</button>
+${S.ch.map(c=>`<article class="card"><h3>Canal ${esc(c.num)} · ${esc(c.name)} ${c.demo?'<span class="tag">EXEMPLO FICTÍCIO</span>':''}</h3><p class="mut" style="margin:.2rem 0">${c.region?esc(c.region)+' · ':''}${c.progId?'Programação: '+esc(c.progId)+' · ':''}${c.active?'Ligado':'Desligado (programas ocultos e sem avisos)'}</p>
+<div class="row"><button data-act="chtog" data-id="${c.id}">${c.active?'Desligar':'Ligar'}</button><button data-act="editch" data-id="${c.id}">✏️ Editar</button><button class="d" data-act="delch" data-id="${c.id}">🗑 Excluir</button></div></article>`).join('')||'<p class="mut">Nenhum canal ainda.</p>'}`}
+function setv(){const s=S.set;return `<h1>Ajustes</h1>
+<section class="card"><h2 style="margin-top:0">🔔 Avisos por voz</h2>
+<label class="chip" style="font-weight:700"><input type="checkbox" id="s_on" ${s.on?'checked':''}> Avisos ligados</label>
+<label for="s_l">Avisar com antecedência de</label><select id="s_l">${[5,10,15,30].map(n=>`<option value="${n}" ${n===s.lead?'selected':''}>${n} minutos</option>`).join('')}</select>
+<label for="s_v">Volume da voz</label><input type="range" id="s_v" min="0.1" max="1" step="0.1" value="${s.vol}">
+<label class="chip"><input type="checkbox" id="s_w" ${s.wake?'checked':''}> Manter a tela ligada</label>
+<div class="row"><button class="p" data-act="test">🔊 Testar voz</button><button data-act="notif">Permitir notificações</button></div>
+<p class="mut"><b>Importante:</b> os avisos só tocam com esta página aberta no navegador. Com a tela bloqueada ou o navegador em segundo plano, o Android e o iPhone podem pausar o site e o aviso pode não tocar. O mais seguro é deixar a página aberta, com “Manter a tela ligada” e o celular carregando. Notificações dependem do navegador.</p></section>
+<section class="card"><h2 style="margin-top:0">🌓 Aparência</h2><select id="s_th">${[['auto','Automático'],['light','Claro'],['dark','Escuro']].map(([v,l])=>`<option value="${v}" ${s.theme===v?'selected':''}>${l}</option>`).join('')}</select></section>
+<section class="card"><h2 style="margin-top:0">🔄 Atualização automática</h2><p>${updTxt()}</p><p class="mut">Nenhuma fonte oficial de programação está conectada. Nenhum horário é inventado: tudo o que aparece foi cadastrado por você.</p><button data-act="upd">Tentar atualizar agora</button></section>
+<section class="card"><h2 style="margin-top:0">💾 Backup</h2><p class="mut">Gere o texto, copie e guarde (por exemplo, enviando para si mesmo). Para restaurar, cole o texto aqui.</p><textarea id="bk" rows="4"></textarea><div class="row"><button data-act="bkmk">Gerar backup</button><button data-act="bkcp">Copiar</button><button data-act="bkrs">Restaurar</button></div></section>
+<section class="card"><h2 style="margin-top:0">🧪 Exemplos fictícios</h2><p class="mut">Mostram como o site funciona. Todos vêm marcados como fictícios.</p><div class="row"><button data-act="demo">Carregar exemplos</button><button class="d" data-act="undemo">Apagar exemplos</button></div></section>`}
+function render(){$('#v').innerHTML=({home,cal:calv,ch:chv,set:setv})[tab]();
+ $('#nav').innerHTML=[['home','🏠','Início'],['cal','📅','Calendário'],['ch','📺','Canais'],['set','⚙️','Ajustes']].map(([t,i,l])=>`<button data-act="tab" data-t="${t}" ${t===tab?'aria-current="page"':''}><span aria-hidden="true" style="font-size:1.4rem">${i}</span>${l}</button>`).join('');cdTick()}
+/* ===== Formulários ===== */
+function dlg(h){D.innerHTML=h;if(!D.open)D.showModal()}
+function pform(p,mode){if(!S.ch.some(c=>c.active)){toast('Cadastre um canal primeiro.');tab='ch';render();return}
+ const r=p.rep,d=p.date||r?.from||cal.sel,u=r?.to||(()=>{const t=pd(d);t.setMonth(t.getMonth()+3);return ymd(t)})(),days=r?.days||[dw(d)];
+ dlg(`<h2 style="margin-top:0">${{new:'Novo programa',edit:'Editar programa',dup:'Duplicar programa'}[mode]}</h2>${mode==='dup'?'<p class="mut">Escolha outra data ou outros dias e toque em Salvar.</p>':''}<div id="err" class="err" role="alert"></div>
+<label for="f_t">Nome da novela ou programa</label><input id="f_t" value="${esc(p.title)}">
+<label for="f_c">Emissora e canal</label><select id="f_c">${S.ch.filter(c=>c.active||c.id===p.ch).map(c=>`<option value="${c.id}" ${c.id===p.ch?'selected':''}>${esc(c.name)} — canal ${esc(c.num)}</option>`).join('')}</select>
+<label for="f_s">Começa às</label><input type="time" id="f_s" value="${p.start}"><label for="f_e">Termina às</label><input type="time" id="f_e" value="${p.end}">
+<label for="f_d">Data (ou data inicial)</label><input type="date" id="f_d" value="${d}">
+<label class="chip"><input type="checkbox" id="f_r" ${r?'checked':''}> Repetir toda semana</label>
+<div id="rb" ${r?'':'hidden'}><label>Dias da semana</label><div style="display:flex;flex-wrap:wrap">${DN.map((n,i)=>`<label class="chip"><input type="checkbox" class="wd" value="${i}" ${days.includes(i)?'checked':''}> ${n}</label>`).join('')}</div><label for="f_u">Repetir até</label><input type="date" id="f_u" value="${u}"></div>
+<label for="f_n">Observações (opcional)</label><textarea id="f_n" rows="2">${esc(p.notes)}</textarea>
+<div class="row"><button class="p" data-act="save" data-id="${mode==='edit'?p.id:''}" data-demo="${p.demo?1:0}">Salvar</button><button data-act="close">Cancelar</button></div>`)}
+function savePr(id,demo){const v=i=>$('#'+i).value.trim(),err=m=>{$('#err').textContent=m;D.scrollTo(0,0)};
+ const title=v('f_t'),c=$('#f_c').value,s=v('f_s'),e=v('f_e'),d=v('f_d'),rp=$('#f_r').checked;
+ if(!title)return err('Escreva o nome do programa.');if(!c)return err('Escolha a emissora.');
+ if(!s||!e)return err('Informe a hora de início e de término.');if(tm(e)<=tm(s))return err('O término precisa ser depois do início.');
+ if(!d)return err('Escolha a data.');
+ let rep=null;if(rp){const days=[...document.querySelectorAll('.wd:checked')].map(x=>+x.value),u=v('f_u');
+  if(!days.length)return err('Marque pelo menos um dia da semana.');if(!u||u<d)return err('A data final precisa ser igual ou depois da inicial.');rep={from:d,to:u,days}}
+ const old=id&&S.pr.find(p=>p.id===id),np={id:id||uid(),title,ch:c,start:s,end:e,notes:v('f_n'),date:rep?null:d,rep,ex:old?.ex||[],demo:old?old.demo:demo==='1'};
+ const ds=[];if(rep){const x=pd(rep.from);for(let k=0;ymd(x)<=rep.to&&k<800;k++,x.setDate(x.getDate()+1))if(rep.days.includes(dw(ymd(x))))ds.push(ymd(x))}else ds.push(d);
+ for(const y of ds){const o=occ(y).find(o=>o.id!==np.id&&o.ch===c&&tm(o.start)<tm(e)&&tm(s)<tm(o.end));
+  if(o){if(!confirm(`Atenção: em ${fdate(y)} já existe "${o.title}" (${o.start} às ${o.end}) neste canal. Salvar mesmo assim?`))return;break}}
+ const i=S.pr.findIndex(p=>p.id===np.id);i>=0?S.pr[i]=np:S.pr.push(np);save();D.close();
+ const t=pd(np.date||rep.from);cal.y=t.getFullYear();cal.m=t.getMonth();cal.sel=ymd(t);render();toast('Programa salvo.')}
+function delDlg(id,d){const p=S.pr.find(x=>x.id===id),rec=!!p.rep;
+ dlg(`<h2 style="margin-top:0">Excluir "${esc(p.title)}"?</h2>${rec?`<p>Este programa se repete toda semana. Para um feriado ou mudança, exclua só o dia ${fdate(d)} e, se precisar, cadastre um programa novo nessa data.</p>`:'<p>Esta ação não pode ser desfeita.</p>'}
+<div class="row">${rec?`<button class="d" data-act="delx" data-id="${id}" data-d="${d}">Só o dia ${fdate(d)}</button>`:''}<button class="d" data-act="dela" data-id="${id}">${rec?'Todos os dias':'Sim, excluir'}</button><button class="p" data-act="close">Não excluir</button></div>`)}
+function cform(c){dlg(`<h2 style="margin-top:0">${c.id?'Editar canal':'Novo canal'}</h2><div id="err" class="err" role="alert"></div>
+<label for="c_n">Número do canal</label><input id="c_n" inputmode="numeric" value="${esc(c.num)}">
+<label for="c_m">Nome da emissora</label><input id="c_m" list="sug" value="${esc(c.name)}"><datalist id="sug"><option value="RBS TV (Globo)"><option value="Band RS"></datalist>
+<label for="c_r">Nome regional (opcional)</label><input id="c_r" value="${esc(c.region)}">
+<label for="c_p">Identificação da programação (opcional)</label><input id="c_p" value="${esc(c.progId)}">
+<label class="chip"><input type="checkbox" id="c_a" ${c.active!==false?'checked':''}> Canal ligado</label>
+<div class="row"><button class="p" data-act="savech" data-id="${c.id||''}">Salvar</button><button data-act="close">Cancelar</button></div>`)}
+function saveCh(id){const v=i=>$('#'+i).value.trim(),num=v('c_n'),name=v('c_m');if(!num||!name)return $('#err').textContent='Informe o número do canal e o nome da emissora.';
+ const o={id:id||uid(),num,name,region:v('c_r'),progId:v('c_p'),active:$('#c_a').checked,demo:false},i=S.ch.findIndex(c=>c.id===id);
+ if(i>=0){o.demo=S.ch[i].demo;S.ch[i]=o}else S.ch.push(o);save();D.close();render();toast('Canal salvo.')}
+function demo(){if(S.ch.some(c=>c.demo))return toast('Os exemplos já estão carregados.');
+ const t=new Date(),f=ymd(new Date(t.getFullYear(),t.getMonth(),t.getDate()-30)),u=ymd(new Date(t.getFullYear(),t.getMonth(),t.getDate()+90));
+ S.ch.push({id:'dm1',num:'1',name:'Emissora Exemplo A',region:'Fictício',progId:'',active:true,demo:true},{id:'dm2',num:'2',name:'Emissora Exemplo B',region:'Fictício',progId:'',active:true,demo:true});
+ const mk=(id,ti,ch,s,e,days)=>({id,title:ti+' (fictício)',ch,start:s,end:e,notes:'Exemplo fictício: não é programação real.',date:null,rep:{from:f,to:u,days},ex:[],demo:true});
+ S.pr.push(mk('dp1','Novela Exemplo','dm1','18:30','19:30',[0,1,2,3,4,5]),mk('dp2','Novela Exemplo 2','dm2','20:00','21:00',[0,1,2,3,4,5]),mk('dp3','Programa de Domingo','dm1','17:00','18:00',[6]));
+ save();render();toast('Exemplos fictícios carregados.')}
+/* ===== Eventos ===== */
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;const q=b.dataset,a=q.act,P=()=>S.pr.find(p=>p.id===q.id);
+ if(a==='tab'){tab=q.t;render();scrollTo(0,0)}
+ else if(a==='pick'){cal.sel=q.d;render();$('#lst')?.scrollIntoView()}
+ else if(a==='mo'){const d=q.n==='0'?new Date():new Date(cal.y,cal.m+ +q.n,1);cal.y=d.getFullYear();cal.m=d.getMonth();if(q.n==='0')cal.sel=ymd(d);render()}
+ else if(a==='new')pform({title:'',ch:S.ch.find(c=>c.active)?.id,start:'18:00',end:'19:00',notes:'',date:tab==='cal'?cal.sel:ymd(new Date())},'new');
+ else if(a==='edit')pform(P(),'edit');else if(a==='dup')pform({...P()},'dup');
+ else if(a==='save')savePr(q.id,q.demo);else if(a==='close')D.close();
+ else if(a==='del')delDlg(q.id,q.d);
+ else if(a==='delx'){const p=P();p.ex=[...(p.ex||[]),q.d];save();D.close();render();toast('Dia excluído.')}
+ else if(a==='dela'){S.pr=S.pr.filter(p=>p.id!==q.id);save();D.close();render();toast('Programa excluído.')}
+ else if(a==='newch')cform({});else if(a==='editch')cform(chOf(q.id));else if(a==='savech')saveCh(q.id);
+ else if(a==='chtog'){const c=chOf(q.id);c.active=!c.active;save();render()}
+ else if(a==='delch'){const n=S.pr.filter(p=>p.ch===q.id).length;if(confirm(`Excluir este canal${n?` e os ${n} programa(s) dele`:''}?`)){S.ch=S.ch.filter(c=>c.id!==q.id);S.pr=S.pr.filter(p=>p.ch!==q.id);save();render()}}
+ else if(a==='test'){const nx=nextOcc();speak(nx?msg(nx.o,S.set.lead)+' Este é um teste.':'Vovó, o aviso por voz está funcionando. Este é um teste.');toast('Tocando o aviso de teste…')}
+ else if(a==='notif'){try{Notification.requestPermission().then(p=>toast(p==='granted'?'Notificações permitidas.':'Notificações não permitidas.'))}catch(x){toast('Este navegador não oferece notificações.')}}
+ else if(a==='upd')upd();
+ else if(a==='bkmk')$('#bk').value=JSON.stringify({v:1,ch:S.ch,pr:S.pr,set:S.set});
+ else if(a==='bkcp'){const t=$('#bk').value;if(!t)return toast('Toque em “Gerar backup” primeiro.');navigator.clipboard?.writeText(t).then(()=>toast('Backup copiado.'),()=>toast('Selecione o texto e copie.'))}
+ else if(a==='bkrs'){try{const r=JSON.parse($('#bk').value);if(!Array.isArray(r.ch)||!Array.isArray(r.pr))throw 0;
+  if(confirm('Restaurar vai substituir os dados atuais. Continuar?')){S.ch=r.ch.filter(c=>c&&c.id&&c.num&&c.name);S.pr=r.pr.filter(p=>p&&p.id&&p.title&&p.ch&&p.start&&p.end&&(p.date||p.rep));if(r.set)S.set={...S.set,...r.set};save();theme();render();toast('Backup restaurado.')}}catch(x){toast('Texto de backup inválido.')}}
+ else if(a==='demo')demo();
+ else if(a==='undemo'){if(confirm('Apagar todos os exemplos fictícios?')){S.ch=S.ch.filter(c=>!c.demo);S.pr=S.pr.filter(p=>!p.demo);save();render();toast('Exemplos apagados.')}}});
+document.addEventListener('input',e=>{const i=e.target.id;if(i==='q'){F.q=e.target.value;$('#lst').innerHTML=lst()}else if(i==='s_v'){S.set.vol=+e.target.value;save()}});
+document.addEventListener('change',e=>{const t=e.target,i=t.id;
+ if(i==='fc'){F.ch=t.value;$('#lst').innerHTML=lst()}else if(i==='f_r')$('#rb').hidden=!t.checked;
+ else if(i==='s_on'){S.set.on=t.checked;save();if(t.checked){try{Notification.requestPermission()}catch(x){}speak('Avisos ligados.')}}
+ else if(i==='s_l'){S.set.lead=+t.value;save()}else if(i==='s_w'){S.set.wake=t.checked;save();wake()}
+ else if(i==='s_th'){S.set.theme=t.value;save();theme()}});
+addEventListener('error',()=>toast('Algo deu errado. Tente de novo.'));
+load();const n=new Date();cal={y:n.getFullYear(),m:n.getMonth(),sel:ymd(n)};theme();render();wake();setInterval(tick,1000);
+</script></body></html>
